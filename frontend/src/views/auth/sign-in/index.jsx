@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
 const Page = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -57,15 +57,15 @@ const Page = () => {
                                         {error && <Alert variant="danger">{error}</Alert>}
                                         <Form onSubmit={handleSubmit}>
                                             <FormGroup className="mb-3">
-                                                <FormLabel htmlFor="userEmail">
-                                                    Email<span className="text-danger">*</span>
+                                                <FormLabel htmlFor="username">
+                                                    Username<span className="text-danger">*</span>
                                                 </FormLabel>
                                                 <FormControl 
-                                                    type="email" 
-                                                    id="userEmail" 
-                                                    placeholder="you@example.com" 
-                                                    value={formData.email}
-                                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                                    type="text" 
+                                                    id="username" 
+                                                    placeholder="admin" 
+                                                    value={formData.username}
+                                                    onChange={(e) => setFormData({...formData, username: e.target.value})}
                                                     required 
                                                 />
                                             </FormGroup>
@@ -98,12 +98,12 @@ const Page = () => {
                                             </div>
                                         </Form>
 
-                                        <p className="text-muted text-center mt-4 mb-0">
+                                        {/* <p className="text-muted text-center mt-4 mb-0">
                                             New here?{' '}
                                             <Link to="/auth/sign-up" className="text-decoration-underline link-offset-3 fw-semibold">
                                                 Create an account
                                             </Link>
-                                        </p>
+                                        </p> */}
                                     </div>
                                 </CardBody>
                             </Card>

@@ -1,8 +1,6 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router';
 import MainLayout from "@/layouts/MainLayout";
-import ProtectedRoute from '@/components/ProtectedRoute';
-import AuthRedirect from '@/components/AuthRedirect';
 
 // Dashboards
 const Dashboard = lazy(() => import('@/views/dashboard'));
@@ -31,6 +29,8 @@ const AuthTwoFactor = lazy(() => import('@/views/auth/two-factor'));
 
 // Users
 const Users = lazy(() => import('@/views/users'));
+const MainPage = lazy(() => import('@/admin/page'));
+const CategoryPage = lazy(() => import('@/views/category'));
 
 // Error
 const Error404 = lazy(() => import('@/views/error/404'));
@@ -75,22 +75,22 @@ const VectorMap = lazy(() => import('@/views/maps/vector'));
 const LeafletMap = lazy(() => import('@/views/maps/leaflet'));
 const authRoutes = [{
   path: '/auth/sign-in',
-  element: <AuthRedirect><AuthSignIn /></AuthRedirect>
+  element: <AuthSignIn />
 }, {
   path: '/auth/sign-up',
-  element: <AuthRedirect><AuthSignUp /></AuthRedirect>
+  element: <AuthSignUp />
 }, {
   path: '/auth/reset-password',
-  element: <AuthRedirect><AuthResetPassword /></AuthRedirect>
+  element: <AuthResetPassword />
 }, {
   path: '/auth/new-password',
-  element: <AuthRedirect><AuthNewPassword /></AuthRedirect>
+  element: <AuthNewPassword />
 }, {
   path: '/auth/two-factor',
-  element: <AuthRedirect><AuthTwoFactor /></AuthRedirect>
+  element: <AuthTwoFactor />
 }, {
   path: '/auth/lock-screen',
-  element: <AuthRedirect><AuthLockScreen /></AuthRedirect>
+  element: <AuthLockScreen />
 }];
 const errorRoutes = [{
   path: '/error/404',
@@ -103,6 +103,12 @@ const dashboardRoutes = [{
 const userRoutes = [{
   path: '/users',
   element: <Users />
+}, {
+  path: '/admin',
+  element: <MainPage />
+}, {
+  path: '/category',
+  element: <CategoryPage />
 }];
 const appsRoutes = [{
   path: '/ton-ai',
@@ -221,7 +227,7 @@ const allRoutes = [{
   path: '/',
   element: <Navigate to="/auth/sign-in" replace />
 }, {
-  element: <ProtectedRoute><MainLayout /></ProtectedRoute>,
+  element: <MainLayout />,
   children: [...dashboardRoutes, ...userRoutes, ...appsRoutes, ...pagesRoutes, ...uiRoutes, ...graphRoutes, ...formRoutes, ...tableRoutes, ...iconRoutes, ...mapRoutes]
 }];
 const otherRoutes = [...authRoutes, ...errorRoutes];

@@ -3,24 +3,32 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import { createAdminTable } from "./models/Admin.js";
 
 dotenv.config();
-const app = express();
-const PORT = process.env.PORT || 5000;
 
-// Middleware
+const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use("/api/auth", authRoutes);
+
+//MIDDLEWARES
+// app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 
-app.get("/", (req, res) => {
-  res.send("API is running ");
-});
+const PORT = process.env.PORT || 5000;
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+const startServer = async () => {
+  try {
+    await createAdminTable();
+    console.log('Admin table initialized');
+    
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+  }
+};
+
+startServer();

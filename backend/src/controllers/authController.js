@@ -1,42 +1,34 @@
 import jwt from 'jsonwebtoken';
-import { createUser, findUserByEmail, validatePassword } from '../models/InMemoryUser.js';
+import { findAdminByUsername, validateAdminPassword } from '../models/Admin.js';
 
 export const register = async (req, res) => {
-  try {
-    const { email, password, name } = req.body;
-    
-    const existingUser = await findUserByEmail(email);
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    const user = await createUser(email, password, name);
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
-    
-    res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name } });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
+  res.status(403).json({ message: 'Registration not allowed. Admin access only.' });
 };
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
+    console.log('Login attempt:', { username, password });
     
-    const user = await findUserByEmail(email);
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+    const admin = await findAdminByUsername(username);
+    console.log('Admin found:', admin ? 'Yes' : 'No');
+    
+    if (!admin) {
+      return res.status(400).json({ message: 'Invalid admin credentials' });
     }
 
-    const isValidPassword = await validatePassword(password, user.password);
+    const isValidPassword = await validateAdminPassword(password, admin.password);
+    console.log('Password valid:', isValidPassword);
+    
     if (!isValidPassword) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid admin credentials' });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ id: admin.id, username: admin.username, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '24h' });
     
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
+    res.json({ token, user: { id: admin.id, username: admin.username, role: 'admin' } });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

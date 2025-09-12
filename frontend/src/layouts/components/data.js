@@ -37,9 +37,9 @@ export const userDropdownItems = [{
 }];
 export const menuItems = [{
   key: 'dashboard',
-  label: 'Dashboard',
+  label: 'Category',
   icon: LuCircleGauge,
-  url: '/dashboard'
+  url: '/category'
 }, {
   key: 'ton-ai',
   label: 'Ton AI',

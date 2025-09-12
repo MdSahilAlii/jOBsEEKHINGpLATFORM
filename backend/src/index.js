@@ -15,7 +15,7 @@ app.use(express.json());
 
 
 //MIDDLEWARES
-// app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 

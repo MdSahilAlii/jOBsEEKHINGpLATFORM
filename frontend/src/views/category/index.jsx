@@ -6,9 +6,20 @@ import { TbHome, TbUserCircle, TbSettings, TbInfoCircle } from 'react-icons/tb';
 
 const CategoryPage = () => {
   const [categories, setCategories] = useState([]);
-  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [formData, setFormData] = useState({ name: '', image: null });
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null); 
+
+   const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+      setPreview(URL.createObjectURL(file)); 
+    }
+  };
+
 
   const fetchCategories = async () => {
     try {
@@ -55,7 +66,7 @@ const CategoryPage = () => {
       const result = await response.json();
       console.log('Submit result:', result);
       
-      setFormData({ name: '', description: '' });
+      setFormData({ name: '', image: null });
       setEditingId(null);
       fetchCategories();
     } catch (error) {
@@ -69,7 +80,7 @@ const CategoryPage = () => {
   const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this category?')) {
       try {
-        await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+        await fetch(`http://localhost:5000/api/categories/${id}`, { method: 'DELETE' });
         fetchCategories();
       } catch (error) {
         console.error('Error deleting category:', error);
@@ -138,15 +149,21 @@ const CategoryPage = () => {
                           required
                         />
                       </div>
+                      
                       <div className="mb-3">
-                        <label className="form-label">Description</label>
-                        <textarea 
-                          className="form-control" 
-                          rows="3" 
-                          placeholder="Enter description"
-                          value={formData.description}
-                          onChange={(e) => setFormData({...formData, description: e.target.value})}
-                        ></textarea>
+                        <label className="form-label">Image</label>
+                        <input type="file" accept='image/*'
+                          onChange={(e) => setFormData(e.target.files[0])}
+                        />
+                        
+                        <img src="" alt="preview" />
+                        // {/* <textarea 
+                        //   className="form-control" 
+                        //   rows="3" 
+                        //   placeholder="Enter description"
+                        //   value={formData.description}
+                        //   onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        // ></textarea> */}
                       </div>
                       <button type="submit" className="btn btn-primary" disabled={loading}>
                         {loading ? 'Saving...' : (editingId ? 'Update Category' : 'Add Category')}

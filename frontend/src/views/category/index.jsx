@@ -16,7 +16,7 @@ const CategoryPage = () => {
   const [loading, setLoading] = useState(false);
   const [editingRowId, setEditingRowId] = useState(null);
   const [editingName, setEditingName] = useState('');
-  const [activeTab, setActiveTab] = useState('Profile');
+  const [activeTab, setActiveTab] = useState('Home');
 
   DataTable.use(DT);
 

@@ -14,8 +14,9 @@ export const createCategoryTable = async () => {
   // Add image column if table already exists without it
   try {
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS image TEXT');
+    await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT \'active\'');
   } catch (error) {
-    // Column might already exist
+    // Columns might already exist
   }
 };
 

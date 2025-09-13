@@ -1,14 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Card, CardBody, Col, Container, Row, Nav, NavItem, NavLink, TabContainer, TabContent, TabPane } from 'react-bootstrap';
+import { Col, Container, Row, Nav, NavItem, NavLink, TabContainer, TabContent, TabPane, Button } from 'react-bootstrap';
 import PageMeta from '@/components/PageMeta';
 import ComponentCard from '@/components/ComponentCard';
-import { TbHome, TbUserCircle, TbSettings, TbInfoCircle } from 'react-icons/tb';
+import { TbHome, TbUserCircle, TbSettings, TbInfoCircle, TbEdit, TbTrash, TbChevronLeft, TbChevronRight, TbChevronsLeft, TbChevronsRight } from 'react-icons/tb';
+import DT from 'datatables.net-bs5';
+import DataTable from 'datatables.net-react';
+import 'datatables.net-responsive';
+import ReactDOMServer from 'react-dom/server';
 
 const CategoryPage = () => {
   const [categories, setCategories] = useState([]);
-  const [formData, setFormData] = useState({ name: '', image: null });
+  const [formData, setFormData] = useState({ name: '', image: null, status: 'active' });
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [editingRowId, setEditingRowId] = useState(null);
+  const [editingName, setEditingName] = useState('');
+  const [activeTab, setActiveTab] = useState('Profile');
+
+  DataTable.use(DT);
 
   const fetchCategories = async () => {
     try {
@@ -49,7 +58,6 @@ const CategoryPage = () => {
       
       setFormData({ name: '', image: null });
       setEditingId(null);
-      // Reset file input
       const fileInput = document.querySelector('input[type="file"]');
       if (fileInput) fileInput.value = '';
       fetchCategories();
@@ -59,6 +67,59 @@ const CategoryPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleStatusToggle = async (id, currentStatus) => {
+    try {
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      await fetch(`http://localhost:5000/api/categories/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      fetchCategories();
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const handleEdit = (category) => {
+    setEditingId(category.id);
+    setFormData({ name: category.name, image: null, status: category.status });
+    setActiveTab('Profile');
+  };
+
+  const handleInlineEdit = (id, name) => {
+    setEditingRowId(id);
+    setEditingName(name);
+  };
+
+  const handleSaveInlineEdit = async (id) => {
+    try {
+      const formDataObj = new FormData();
+      formDataObj.append('name', editingName);
+      
+      const response = await fetch(`http://localhost:5000/api/categories/${id}`, {
+        method: 'PUT',
+        body: formDataObj
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      setEditingRowId(null);
+      setEditingName('');
+      fetchCategories();
+    } catch (error) {
+      console.error('Error updating category:', error);
+      alert('Error updating category.');
+    }
+  };
+
+  const handleCancelInlineEdit = () => {
+    setEditingRowId(null);
+    setEditingName('');
   };
 
   const handleDelete = async (id) => {
@@ -72,222 +133,172 @@ const CategoryPage = () => {
     }
   };
 
+  // Global functions for DataTable buttons
+  window.toggleStatus = handleStatusToggle;
+  window.startEdit = (id, name) => {
+    const category = categories.find(cat => cat.id === id);
+    if (category) {
+      handleEdit(category);
+    }
+  };
+  window.saveEdit = handleSaveInlineEdit;
+  window.cancelEdit = handleCancelInlineEdit;
+  window.deleteCategory = handleDelete;
+
+  const getTableData = () => {
+    return categories.map(cat => {
+      const isEditing = editingRowId === cat.id;
+      return [
+        cat.id,
+        isEditing ? 
+          `<input type="text" class="form-control form-control-sm" value="${editingName}" onchange="window.editingName = this.value" />` :
+          cat.name,
+        cat.image ? 
+          `<img src="http://localhost:5000/uploads/${cat.image}" alt="Category" class="img-thumbnail" style="width: 20px; height: 20px; object-fit: cover;">` : 
+          'No image',
+        `<span class="badge badge-label badge-soft-${cat.status === 'active' ? 'success' : 'danger'}" onclick="toggleStatus(${cat.id}, '${cat.status}')" style="cursor: pointer;">${cat.status === 'active' ? 'Active' : 'Inactive'}</span>`,
+        isEditing ?
+          `<button class="btn btn-sm btn-success me-1" onclick="saveEdit(${cat.id})">✓</button><button class="btn btn-sm btn-secondary" onclick="cancelEdit()">✕</button>` :
+          `<button class="btn btn-sm btn-primary me-1" onclick="startEdit(${cat.id}, '${cat.name}')">Edit</button><button class="btn btn-sm btn-danger" onclick="deleteCategory(${cat.id})">Delete</button>`
+      ];
+    });
+  };
+
+  const columns = [
+    { data: 0, title: 'ID' },
+    { data: 1, title: 'Name', orderable: false },
+    { data: 2, title: 'Image', orderable: false },
+    { data: 3, title: 'Status', orderable: false },
+    { data: 4, title: 'Actions', orderable: false }
+  ];
+
   useEffect(() => {
     fetchCategories();
   }, []);
 
   return (
-    <>
-      <PageMeta title="Category Management" />
-      <Container fluid>
-        <Row>
-          <Col xs={12}>
-            <div className="page-title-box">
-              <h4 className="page-title">Category Management</h4>
-            </div>
-          </Col>
-        </Row>
-
-        <Row>
-          <Col xs={12}>
-            <TabContainer defaultActiveKey="Add">
-              <Nav className="nav-tabs nav-justified nav-bordered nav-bordered-danger mb-3">
-                <NavItem>
-                  <NavLink eventKey="Add">
-                    <TbHome className="fs-lg me-md-1 align-middle" />
-                    Add Category
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink eventKey="List">
-                    <TbUserCircle className="fs-lg me-md-1 align-middle" />
-                    Category List
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink eventKey="Settings">
-                    <TbSettings className="fs-lg me-md-1 align-middle" />
-                    Settings
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink eventKey="About">
-                    <TbInfoCircle className="fs-lg me-md-1 align-middle" />
-                    About
-                  </NavLink>
-                </NavItem>
-              </Nav>
-              
-              <TabContent>
-                <TabPane eventKey="Add">
-                  <ComponentCard title={editingId ? "Edit Category" : "Add Category"} isCollapsible>
-                    <form onSubmit={handleSubmit}>
-                      <div className="mb-3">
-                        <label className="form-label">Category Name</label>
-                        <input 
-                          type="text" 
-                          className="form-control" 
-                          placeholder="Enter category name"
-                          value={formData.name}
-                          onChange={(e) => setFormData({...formData, name: e.target.value})}
-                          required
-                        />
-                      </div>
-                      
-                      <div className="mb-3">
-                        <label className="form-label">Image</label>
-                        <input 
-                          type="file" 
-                          className="form-control"
-                          accept="image/*"
-                          onChange={(e) => setFormData({...formData, image: e.target.files[0]})}
-                        />
-                        {formData.image && (
-                          <div className="mt-2">
-                            <img 
-                              src={URL.createObjectURL(formData.image)} 
-                              alt="Preview" 
-                              className="img-thumbnail" 
-                              style={{maxWidth: '200px', maxHeight: '200px', objectFit: 'cover'}}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <button type="submit" className="btn btn-primary" disabled={loading}>
-                        {loading ? 'Saving...' : (editingId ? 'Update Category' : 'Add Category')}
-                      </button>
-                      {editingId && (
-                        <button 
-                          type="button" 
-                          className="btn btn-secondary ms-2"
-                          onClick={() => {
-                            setEditingId(null);
-                            setFormData({ name: '', image: null });
-                            // Reset file input
-                            const fileInput = document.querySelector('input[type="file"]');
-                            if (fileInput) fileInput.value = '';
-                          }}
+   <div className='mt-4'>
+  <ComponentCard title="Category List"  isCollapsible>
+     <TabContainer activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
+                <Nav className="nav-tabs nav-justified nav-bordered nav-bordered-danger mb-3">
+                    <NavItem>
+                        <NavLink eventKey="Home" href="#home-b1">
+                            <TbHome className="fs-lg me-md-1 align-middle" />
+                            Category
+                        </NavLink>
+                    </NavItem>
+                    <NavItem>
+                        <NavLink eventKey="Profile" href="#profile-b1">
+                            <TbUserCircle className="fs-lg me-md-1 align-middle" />
+                            Add Category
+                        </NavLink>
+                    </NavItem>
+                    <NavItem>
+                        <NavLink eventKey="Settings" href="#settings-b1">
+                            <TbSettings className="fs-lg me-md-1 align-middle" />
+                            Sub Category
+                        </NavLink>
+                    </NavItem>
+                    <NavItem>
+                        <NavLink eventKey="About" href="#about-b1">
+                            <TbInfoCircle className="fs-lg me-md-1 align-middle" />
+                            About
+                        </NavLink>
+                    </NavItem>
+                </Nav>
+                <TabContent>
+                    <TabPane eventKey="Home" id="home-b1">
+                        <DataTable    
+                            data={getTableData()} 
+                            columns={columns} 
+                            options={{
+                                responsive: true,
+                                language: {
+                                    paginate: {
+                                        first: ReactDOMServer.renderToStaticMarkup(<TbChevronsLeft className="fs-lg" />),
+                                        previous: ReactDOMServer.renderToStaticMarkup(<TbChevronLeft className="fs-lg" />),
+                                        next: ReactDOMServer.renderToStaticMarkup(<TbChevronRight className="fs-lg" />),
+                                        last: ReactDOMServer.renderToStaticMarkup(<TbChevronsRight className="fs-lg" />)
+                                    }
+                                }
+                            }} 
+                            className="table table-striped dt-responsive align-middle mb-0"
                         >
-                          Cancel
-                        </button>
-                      )}
-                    </form>
-                  </ComponentCard>
-                </TabPane>
-                
-                <TabPane eventKey="List">
-                  <ComponentCard title="Category List" isCollapsible>
-                    <div className="table-responsive">
-                      <table className="table table-striped">
-                        <thead>
-                          <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Image</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {categories.map(cat => (
-                            <tr key={cat.id}>
-                              <td>{cat.id}</td>
-                              <td>
-                                {editingId === cat.id ? (
-                                  <input 
+                            <thead className="thead-sm text-uppercase fs-xxs">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Image</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                        </DataTable>
+                    </TabPane>
+                    <TabPane eventKey="Profile" id="profile-b1">
+                        <form onSubmit={handleSubmit}>
+                            <div className="mb-3">
+                                <label className="form-label">Category Name</label>
+                                <input 
                                     type="text" 
-                                    className="form-control form-control-sm"
+                                    className="form-control" 
+                                    placeholder="Enter category name"
                                     value={formData.name}
                                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                  />
-                                ) : (
-                                  cat.name
-                                )}
-                              </td>
-                              <td>
-                                {editingId === cat.id ? (
-                                  <input 
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="mb-3">
+                                <label className="form-label">Image</label>
+                                <input 
                                     type="file" 
-                                    className="form-control form-control-sm"
+                                    className="form-control"
                                     accept="image/*"
                                     onChange={(e) => setFormData({...formData, image: e.target.files[0]})}
-                                  />
-                                ) : (
-                                  cat.image ? (
-                                    <img 
-                                      src={`http://localhost:5000/uploads/${cat.image}`} 
-                                      alt="Category" 
-                                      className="img-thumbnail" 
-                                      style={{width: '50px', height: '50px', objectFit: 'cover'}}
-                                    />
-                                  ) : (
-                                    'No image'
-                                  )
+                                />
+                                {formData.image && (
+                                    <div className="mt-2">
+                                        <img 
+                                            src={URL.createObjectURL(formData.image)} 
+                                            alt="Preview" 
+                                            className="img-thumbnail" 
+                                            style={{maxWidth: '200px', maxHeight: '200px', objectFit: 'cover'}}
+                                        />
+                                    </div>
                                 )}
-                              </td>
-                              <td>
-                                {editingId === cat.id ? (
-                                  <>
-                                    <button 
-                                      className="btn btn-sm btn-success me-1"
-                                      onClick={handleSubmit}
-                                    >
-                                      Save
-                                    </button>
-                                    <button 
-                                      className="btn btn-sm btn-secondary"
-                                      onClick={() => {
+                            </div>
+                            <button type="submit" className="btn btn-primary" disabled={loading}>
+                                {loading ? 'Saving...' : (editingId ? 'Update Category' : 'Add Category')}
+                            </button>
+                            {editingId && (
+                                <button 
+                                    type="button" 
+                                    className="btn btn-secondary ms-2"
+                                    onClick={() => {
                                         setEditingId(null);
                                         setFormData({ name: '', image: null });
-                                      }}
-                                    >
-                                      Cancel
-                                    </button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <button 
-                                      className="btn btn-sm btn-outline-primary me-1"
-                                      onClick={() => {
-                                        setFormData({ name: cat.name, image: null });
-                                        setEditingId(cat.id);
-                                      }}
-                                    >
-                                      Edit
-                                    </button>
-                                    <button 
-                                      className="btn btn-sm btn-outline-danger"
-                                      onClick={() => handleDelete(cat.id)}
-                                    >
-                                      Delete
-                                    </button>
-                                  </>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </ComponentCard>
-                </TabPane>
-                
-                <TabPane eventKey="Settings">
-                  <ComponentCard title="Category Settings">
-                    <p>Configure category settings and preferences here.</p>
-                  </ComponentCard>
-                </TabPane>
-                
-                <TabPane eventKey="About">
-                  <ComponentCard title="About Categories">
-                    <p>Information about category management system.</p>
-                  </ComponentCard>
-                </TabPane>
-              </TabContent>
+                                        const fileInput = document.querySelector('input[type="file"]');
+                                        if (fileInput) fileInput.value = '';
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                            )}
+                        </form>
+                    </TabPane>
+                    <TabPane eventKey="Settings">
+                       
+                    </TabPane>
+                    <TabPane eventKey="About" id="about-b1">
+                       
+                    </TabPane>
+                </TabContent>
             </TabContainer>
-          </Col>
-        </Row>
-      </Container>
-    </>
+
+
+                    </ComponentCard>
+                    </div>
   );
 };
 

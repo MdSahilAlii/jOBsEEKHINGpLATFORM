@@ -27,8 +27,18 @@ const DataTable = ({
                     </tr>)}
                 </thead>}
             <tbody>
-            {table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => <tr key={row.id}>
-                        {row.getVisibleCells().map(cell => <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}
+            {table.getRowModel().rows?.length ? table.getRowModel().rows.map((row, rowIndex) => <tr key={row.id}>
+                        {row.getVisibleCells().map((cell, cellIndex) => <td key={cell.id} tabIndex={0} onKeyDown={(e) => {
+                          if (e.key === 'Tab') {
+                            e.preventDefault();
+                            const nextCell = e.shiftKey ? 
+                              document.querySelector(`[data-row="${rowIndex}"][data-cell="${cellIndex - 1}"]`) ||
+                              document.querySelector(`[data-row="${rowIndex - 1}"][data-cell="${row.getVisibleCells().length - 1}"]`) :
+                              document.querySelector(`[data-row="${rowIndex}"][data-cell="${cellIndex + 1}"]`) ||
+                              document.querySelector(`[data-row="${rowIndex + 1}"][data-cell="0"]`);
+                            if (nextCell) nextCell.focus();
+                          }
+                        }} data-row={rowIndex} data-cell={cellIndex}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}
                     </tr>) : <tr>
                     <td colSpan={columns.length} className="text-center py-3 text-muted">
                         {emptyMessage}

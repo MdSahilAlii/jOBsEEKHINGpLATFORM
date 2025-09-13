@@ -31,6 +31,7 @@ const AuthTwoFactor = lazy(() => import('@/views/auth/two-factor'));
 const Users = lazy(() => import('@/views/users'));
 const MainPage = lazy(() => import('@/admin/page'));
 const CategoryPage = lazy(() => import('@/views/category'));
+const SubCategoryPage = lazy(() => import('@/views/sub-category'));
 
 // Error
 const Error404 = lazy(() => import('@/views/error/404'));
@@ -109,7 +110,11 @@ const userRoutes = [{
 }, {
   path: '/category',
   element: <CategoryPage />
-}];
+},{
+  path: '/sub-category',
+  element: <SubCategoryPage />
+}
+];
 const appsRoutes = [{
   path: '/ton-ai',
   element: <TonAI />

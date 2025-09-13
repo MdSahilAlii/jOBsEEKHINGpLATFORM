@@ -37,9 +37,22 @@ export const userDropdownItems = [{
 }];
 export const menuItems = [{
   key: 'dashboard',
-  label: 'Category',
+  label: 'Dashboard',
   icon: LuCircleGauge,
-  url: '/category'
+  url: '/dashboard'
+}, {
+  key: 'category',
+  label: 'Category',
+  icon: LuLayers2,
+  children: [{
+    key: 'category-list',
+    label: 'Category',
+    url: '/category'
+  }, {
+    key: 'sub-category-list',
+    label: 'Sub Category',
+    url: '/sub-category'
+  }]
 }, {
   key: 'ton-ai',
   label: 'Ton AI',

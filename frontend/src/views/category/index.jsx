@@ -11,6 +11,7 @@ import ReactDOMServer from 'react-dom/server';
 const CategoryPage = () => {
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({ name: '', image: null, status: 'active' });
+  const [currentImage, setCurrentImage] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editingRowId, setEditingRowId] = useState(null);
@@ -86,6 +87,7 @@ const CategoryPage = () => {
   const handleEdit = (category) => {
     setEditingId(category.id);
     setFormData({ name: category.name, image: null, status: category.status });
+    setCurrentImage(category.image);
     setActiveTab('Profile');
   };
 
@@ -257,8 +259,20 @@ const CategoryPage = () => {
                                     accept="image/*"
                                     onChange={(e) => setFormData({...formData, image: e.target.files[0]})}
                                 />
+                                {editingId && currentImage && !formData.image && (
+                                    <div className="mt-2">
+                                        <p className="text-muted">Current Image:</p>
+                                        <img 
+                                            src={`http://localhost:5000/uploads/${currentImage}`} 
+                                            alt="Current" 
+                                            className="img-thumbnail" 
+                                            style={{maxWidth: '200px', maxHeight: '200px', objectFit: 'cover'}}
+                                        />
+                                    </div>
+                                )}
                                 {formData.image && (
                                     <div className="mt-2">
+                                        <p className="text-muted">New Image Preview:</p>
                                         <img 
                                             src={URL.createObjectURL(formData.image)} 
                                             alt="Preview" 
@@ -278,6 +292,7 @@ const CategoryPage = () => {
                                     onClick={() => {
                                         setEditingId(null);
                                         setFormData({ name: '', image: null });
+                                        setCurrentImage(null);
                                         const fileInput = document.querySelector('input[type="file"]');
                                         if (fileInput) fileInput.value = '';
                                     }}

@@ -5,11 +5,18 @@ export const createCategoryTable = async () => {
     CREATE TABLE IF NOT EXISTS categories (
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
-      description TEXT,
+      image TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
   await pool.query(query);
+  
+  // Add image column if table already exists without it
+  try {
+    await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS image TEXT');
+  } catch (error) {
+    // Column might already exist
+  }
 };
 
 export const getAllCategories = async () => {
@@ -18,15 +25,15 @@ export const getAllCategories = async () => {
   return result.rows;
 };
 
-export const createCategory = async (name, description) => {
-  const query = 'INSERT INTO categories (name, description) VALUES ($1, $2) RETURNING *';
-  const result = await pool.query(query, [name, description]);
+export const createCategory = async (name, image) => {
+  const query = 'INSERT INTO categories (name, image) VALUES ($1, $2) RETURNING *';
+  const result = await pool.query(query, [name, image]);
   return result.rows[0];
 };
 
-export const updateCategory = async (id, name, description) => {
-  const query = 'UPDATE categories SET name = $1, description = $2 WHERE id = $3 RETURNING *';
-  const result = await pool.query(query, [name, description, id]);
+export const updateCategory = async (id, name, image) => {
+  const query = 'UPDATE categories SET name = $1, image = $2 WHERE id = $3 RETURNING *';
+  const result = await pool.query(query, [name, image, id]);
   return result.rows[0];
 };
 

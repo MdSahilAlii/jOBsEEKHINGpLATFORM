@@ -11,8 +11,9 @@ export const getCategories = async (req, res) => {
 
 export const addCategory = async (req, res) => {
   try {
-    const { name, description } = req.body;
-    const category = await createCategory(name, description);
+    const { name } = req.body;
+    const image = req.file ? req.file.filename : null;
+    const category = await createCategory(name, image);
     res.status(201).json(category);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -22,8 +23,14 @@ export const addCategory = async (req, res) => {
 export const editCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description } = req.body;
-    const category = await updateCategory(id, name, description);
+    const { name } = req.body;
+    
+    // Get existing category to preserve image if no new image uploaded
+    const existingCategory = await getAllCategories();
+    const current = existingCategory.find(cat => cat.id == id);
+    
+    const image = req.file ? req.file.filename : current?.image;
+    const category = await updateCategory(id, name, image);
     res.json(category);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

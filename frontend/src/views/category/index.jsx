@@ -9,34 +9,17 @@ const CategoryPage = () => {
   const [formData, setFormData] = useState({ name: '', image: null });
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [image, setImage] = useState(null);
-  const [preview, setPreview] = useState(null); 
-
-   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      setPreview(URL.createObjectURL(file)); 
-    }
-  };
-
 
   const fetchCategories = async () => {
     try {
-      console.log('Fetching categories...');
       const response = await fetch('http://localhost:5000/api/categories');
-      console.log('Response status:', response.status);
-      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
       const data = await response.json();
-      console.log('Categories data:', data);
       setCategories(data);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      // Set some dummy data for testing
       setCategories([]);
     }
   };
@@ -49,25 +32,26 @@ const CategoryPage = () => {
       const url = editingId ? `http://localhost:5000/api/categories/${editingId}` : 'http://localhost:5000/api/categories';
       const method = editingId ? 'PUT' : 'POST';
       
-      console.log('Submitting:', { url, method, formData });
+      const formDataObj = new FormData();
+      formDataObj.append('name', formData.name);
+      if (formData.image) {
+        formDataObj.append('image', formData.image);
+      }
       
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: formDataObj
       });
-      
-      console.log('Submit response status:', response.status);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const result = await response.json();
-      console.log('Submit result:', result);
-      
       setFormData({ name: '', image: null });
       setEditingId(null);
+      // Reset file input
+      const fileInput = document.querySelector('input[type="file"]');
+      if (fileInput) fileInput.value = '';
       fetchCategories();
     } catch (error) {
       console.error('Error saving category:', error);
@@ -152,18 +136,22 @@ const CategoryPage = () => {
                       
                       <div className="mb-3">
                         <label className="form-label">Image</label>
-                        <input type="file" accept='image/*'
-                          onChange={(e) => setFormData(e.target.files[0])}
+                        <input 
+                          type="file" 
+                          className="form-control"
+                          accept="image/*"
+                          onChange={(e) => setFormData({...formData, image: e.target.files[0]})}
                         />
-                        
-                        <img src="" alt="preview" />
-                        // {/* <textarea 
-                        //   className="form-control" 
-                        //   rows="3" 
-                        //   placeholder="Enter description"
-                        //   value={formData.description}
-                        //   onChange={(e) => setFormData({...formData, description: e.target.value})}
-                        // ></textarea> */}
+                        {formData.image && (
+                          <div className="mt-2">
+                            <img 
+                              src={URL.createObjectURL(formData.image)} 
+                              alt="Preview" 
+                              className="img-thumbnail" 
+                              style={{maxWidth: '200px', maxHeight: '200px', objectFit: 'cover'}}
+                            />
+                          </div>
+                        )}
                       </div>
                       <button type="submit" className="btn btn-primary" disabled={loading}>
                         {loading ? 'Saving...' : (editingId ? 'Update Category' : 'Add Category')}
@@ -174,7 +162,10 @@ const CategoryPage = () => {
                           className="btn btn-secondary ms-2"
                           onClick={() => {
                             setEditingId(null);
-                            setFormData({ name: '', description: '' });
+                            setFormData({ name: '', image: null });
+                            // Reset file input
+                            const fileInput = document.querySelector('input[type="file"]');
+                            if (fileInput) fileInput.value = '';
                           }}
                         >
                           Cancel
@@ -192,7 +183,7 @@ const CategoryPage = () => {
                           <tr>
                             <th>ID</th>
                             <th>Name</th>
-                            <th>Description</th>
+                            <th>Image</th>
                             <th>Actions</th>
                           </tr>
                         </thead>
@@ -200,24 +191,77 @@ const CategoryPage = () => {
                           {categories.map(cat => (
                             <tr key={cat.id}>
                               <td>{cat.id}</td>
-                              <td>{cat.name}</td>
-                              <td>{cat.description || 'No description'}</td>
                               <td>
-                                <button 
-                                  className="btn btn-sm btn-outline-primary me-1"
-                                  onClick={() => {
-                                    setFormData({ name: cat.name, description: cat.description || '' });
-                                    setEditingId(cat.id);
-                                  }}
-                                >
-                                  Edit
-                                </button>
-                                <button 
-                                  className="btn btn-sm btn-outline-danger"
-                                  onClick={() => handleDelete(cat.id)}
-                                >
-                                  Delete
-                                </button>
+                                {editingId === cat.id ? (
+                                  <input 
+                                    type="text" 
+                                    className="form-control form-control-sm"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                  />
+                                ) : (
+                                  cat.name
+                                )}
+                              </td>
+                              <td>
+                                {editingId === cat.id ? (
+                                  <input 
+                                    type="file" 
+                                    className="form-control form-control-sm"
+                                    accept="image/*"
+                                    onChange={(e) => setFormData({...formData, image: e.target.files[0]})}
+                                  />
+                                ) : (
+                                  cat.image ? (
+                                    <img 
+                                      src={`http://localhost:5000/uploads/${cat.image}`} 
+                                      alt="Category" 
+                                      className="img-thumbnail" 
+                                      style={{width: '50px', height: '50px', objectFit: 'cover'}}
+                                    />
+                                  ) : (
+                                    'No image'
+                                  )
+                                )}
+                              </td>
+                              <td>
+                                {editingId === cat.id ? (
+                                  <>
+                                    <button 
+                                      className="btn btn-sm btn-success me-1"
+                                      onClick={handleSubmit}
+                                    >
+                                      Save
+                                    </button>
+                                    <button 
+                                      className="btn btn-sm btn-secondary"
+                                      onClick={() => {
+                                        setEditingId(null);
+                                        setFormData({ name: '', image: null });
+                                      }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button 
+                                      className="btn btn-sm btn-outline-primary me-1"
+                                      onClick={() => {
+                                        setFormData({ name: cat.name, image: null });
+                                        setEditingId(cat.id);
+                                      }}
+                                    >
+                                      Edit
+                                    </button>
+                                    <button 
+                                      className="btn btn-sm btn-outline-danger"
+                                      onClick={() => handleDelete(cat.id)}
+                                    >
+                                      Delete
+                                    </button>
+                                  </>
+                                )}
                               </td>
                             </tr>
                           ))}
